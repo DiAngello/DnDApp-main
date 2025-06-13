@@ -17,10 +17,6 @@
     <br /></p>
 </div>
 
-<p align="center">
-  <img src="https://forthebadge.com/images/badges/built-with-love.png" alt="Built with Love">
-</p>
-
 ## Alunos:
 ANA LUÍSA DA PENHA MATOS
 
