@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editar Personagem</title>
+  <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-nav">
+        <button onclick="voltarParaVisualizacao()" class="btn-back">
+          <i data-lucide="arrow-left"></i>
+          Voltar
+        </button>
+        <div class="header-content">
+          <i data-lucide="edit" class="header-icon"></i>
+          <h1>Editar Personagem</h1>
+        </div>
+        <div class="spacer"></div>
+      </div>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loading" class="loading-state">
+      <div class="loading-content">
+        <i data-lucide="loader-2" class="loading-spinner"></i>
+        <p>Carregando dados do personagem...</p>
+      </div>
+    </div>
+
+    <!-- Main Form -->
+    <main id="formulario-edicao" class="main-content" style="display: none;">
+      <!-- Nome do Personagem - Destaque -->
+      <div class="character-name-section">
+        <div class="input-group featured">
+          <label for="nome-personagem">
+            <i data-lucide="user"></i>
+            Nome do Personagem
+          </label>
+          <input type="text" id="nome-personagem" placeholder="Nome do seu personagem..." />
+        </div>
+      </div>
+
+      <!-- Informações Básicas -->
+      <div class="form-section">
+        <h2><i data-lucide="info"></i> Informações Básicas</h2>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="classe-nivel">
+              <i data-lucide="sword"></i>
+              Classe e Nível
+            </label>
+            <input type="text" id="classe-nivel" placeholder="Ex: Guerreiro Nível 5" />
+          </div>
+          <div class="input-group">
+            <label for="antecedente">
+              <i data-lucide="scroll-text"></i>
+              Antecedente
+            </label>
+            <input type="text" id="antecedente" placeholder="Ex: Soldado, Artesão" />
+          </div>
+          <div class="input-group">
+            <label for="nome-jogador">
+              <i data-lucide="user-circle"></i>
+              Nome do Jogador
+            </label>
+            <input type="text" id="nome-jogador" placeholder="Seu nome" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Características -->
+      <div class="form-section">
+        <h2><i data-lucide="users"></i> Características</h2>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="raca">
+              <i data-lucide="crown"></i>
+              Raça
+            </label>
+            <input type="text" id="raca" placeholder="Ex: Humano, Elfo" />
+          </div>
+          <div class="input-group">
+            <label for="alinhamento">
+              <i data-lucide="compass"></i>
+              Alinhamento
+            </label>
+            <input type="text" id="alinhamento" placeholder="Ex: Leal e Bom" />
+          </div>
+          <div class="input-group">
+            <label for="pontos_experiencia">
+              <i data-lucide="star"></i>
+              Pontos de Experiência
+            </label>
+            <input type="number" id="pontos_experiencia" placeholder="0" min="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Atributos de Combate -->
+      <div class="form-section">
+        <h2><i data-lucide="shield"></i> Atributos de Combate</h2>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="classe-armadura">
+              <i data-lucide="shield-check"></i>
+              Classe de Armadura
+            </label>
+            <input type="number" id="classe-armadura" placeholder="10" min="1" />
+          </div>
+          <div class="input-group">
+            <label for="iniciativa">
+              <i data-lucide="zap"></i>
+              Iniciativa
+            </label>
+            <input type="number" id="iniciativa" placeholder="0" />
+          </div>
+          <div class="input-group">
+            <label for="deslocamento">
+              <i data-lucide="move"></i>
+              Deslocamento
+            </label>
+            <input type="number" id="deslocamento" placeholder="30" min="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Pontos de Vida -->
+      <div class="form-section">
+        <h2><i data-lucide="heart"></i> Pontos de Vida</h2>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="pontos_vida_max">
+              <i data-lucide="heart-pulse"></i>
+              Pontos de Vida Máximos
+            </label>
+            <input type="number" id="pontos_vida_max" placeholder="8" min="1" />
+          </div>
+          <div class="input-group">
+            <label for="pontos_vida_atual">
+              <i data-lucide="activity"></i>
+              Pontos de Vida Atuais
+            </label>
+            <input type="number" id="pontos_vida_atual" placeholder="8" min="0" />
+          </div>
+          <div class="input-group">
+            <label for="pontos_vida_temp">
+              <i data-lucide="plus-circle"></i>
+              Pontos de Vida Temporários
+            </label>
+            <input type="number" id="pontos_vida_temp" placeholder="0" min="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Testes de Morte -->
+      <div class="form-section">
+        <h2><i data-lucide="skull"></i> Testes Contra a Morte</h2>
+        <div class="death-saves">
+          <div class="save-group">
+            <label for="dado-vida">
+              <i data-lucide="dice-6"></i>
+              Dado de Vida
+            </label>
+            <input type="text" id="dado-vida" placeholder="1d8" />
+          </div>
+          <div class="saves-checkboxes">
+            <div class="save-type">
+              <h3><i data-lucide="check-circle"></i> Sucessos</h3>
+              <div class="checkboxes">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="sucesso1" />
+                  <span class="checkmark success"></span>
+                  1º Sucesso
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="sucesso2" />
+                  <span class="checkmark success"></span>
+                  2º Sucesso
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="sucesso3" />
+                  <span class="checkmark success"></span>
+                  3º Sucesso
+                </label>
+              </div>
+            </div>
+            <div class="save-type">
+              <h3><i data-lucide="x-circle"></i> Falhas</h3>
+              <div class="checkboxes">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="falha1" />
+                  <span class="checkmark failure"></span>
+                  1ª Falha
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="falha2" />
+                  <span class="checkmark failure"></span>
+                  2ª Falha
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="falha3" />
+                  <span class="checkmark failure"></span>
+                  3ª Falha
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personalidade -->
+      <div class="form-section">
+        <h2><i data-lucide="brain"></i> Personalidade</h2>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="traços_personalidade">
+              <i data-lucide="smile"></i>
+              Traços de Personalidade
+            </label>
+            <input type="text" id="traços_personalidade" placeholder="Ex: Corajoso, Leal" />
+          </div>
+          <div class="input-group">
+            <label for="ideais">
+              <i data-lucide="target"></i>
+              Ideais
+            </label>
+            <input type="text" id="ideais" placeholder="Ex: Justiça, Liberdade" />
+          </div>
+          <div class="input-group">
+            <label for="vínculos">
+              <i data-lucide="link"></i>
+              Vínculos
+            </label>
+            <input type="text" id="vínculos" placeholder="Ex: Família, Honra" />
+          </div>
+          <div class="input-group">
+            <label for="fraquezas">
+              <i data-lucide="alert-triangle"></i>
+              Fraquezas
+            </label>
+            <input type="text" id="fraquezas" placeholder="Ex: Teimoso, Impulsivo" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Características Físicas -->
+      <div class="form-section">
+        <h2><i data-lucide="eye"></i> Características Físicas</h2>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="idade">
+              <i data-lucide="calendar"></i>
+              Idade
+            </label>
+            <input type="number" id="idade" placeholder="25" min="1" />
+          </div>
+          <div class="input-group">
+            <label for="altura">
+              <i data-lucide="ruler"></i>
+              Altura
+            </label>
+            <input type="text" id="altura" placeholder="1,75m" />
+          </div>
+          <div class="input-group">
+            <label for="peso">
+              <i data-lucide="weight"></i>
+              Peso
+            </label>
+            <input type="text" id="peso" placeholder="70kg" />
+          </div>
+          <div class="input-group">
+            <label for="cor_olhos">
+              <i data-lucide="eye"></i>
+              Cor dos Olhos
+            </label>
+            <input type="text" id="cor_olhos" placeholder="Castanhos" />
+          </div>
+          <div class="input-group">
+            <label for="cor_pele">
+              <i data-lucide="palette"></i>
+              Cor da Pele
+            </label>
+            <input type="text" id="cor_pele" placeholder="Morena" />
+          </div>
+          <div class="input-group">
+            <label for="cor_cabelo">
+              <i data-lucide="scissors"></i>
+              Cor do Cabelo
+            </label>
+            <input type="text" id="cor_cabelo" placeholder="Preto" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Características Adicionais -->
+      <div class="form-section">
+        <h2><i data-lucide="file-text"></i> Características Adicionais</h2>
+        <div class="input-group full-width">
+          <label for="caracteristicas-adicionais">
+            <i data-lucide="pen-tool"></i>
+            Descreva características especiais, marcas distintivas, etc.
+          </label>
+          <textarea id="caracteristicas-adicionais" rows="3"
+            placeholder="Ex: Cicatriz no rosto, tatuagem no braço..."></textarea>
+        </div>
+      </div>
+
+      <!-- Botões de Ação -->
+      <div class="action-section">
+        <button id="btn-salvar" type="button" class="btn btn-success">
+          <i data-lucide="save"></i>
+          Salvar Alterações
+        </button>
+        <button onclick="voltarParaVisualizacao()" type="button" class="btn btn-danger">
+          <i data-lucide="x"></i>
+          Cancelar
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <button data-aba="personagem" onclick="irPara('/personagens')">
+      <i data-lucide="user"></i>
+      <span>Personagem</span>
+    </button>
+    <button data-aba="atributos" onclick="irPara('/atributos')">
+      <i data-lucide="list"></i>
+      <span>Atributos</span>
+    </button>
+    <button data-aba="habilidades" onclick="irPara('/habilidades')">
+      <i data-lucide="star"></i>
+      <span>Habilidades</span>
+    </button>
+    <button data-aba="magias" onclick="irPara('/magias')">
+      <i data-lucide="zap"></i>
+      <span>Magias</span>
+    </button>
+    <button data-aba="inventario" onclick="irPara('/inventario')">
+      <i data-lucide="briefcase"></i>
+      <span>Inventário</span>
+    </button>
+    <button data-aba="jogador" onclick="irPara('/jogador')">
+      <i data-lucide="user-circle"></i>
+      <span>Jogador</span>
+    </button>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+
+    class AuthCache {
+      constructor() {
+        this.cacheKey = 'auth_verification_cache';
+        this.cacheTimeout = 5 * 60 * 1000; // 5 minutos
+      }
+
+      isValid() {
+        const cache = this.getCache();
+        if (!cache) return false;
+
+        const now = Date.now();
+        return (now - cache.timestamp) < this.cacheTimeout;
+      }
+
+      getCache() {
+        try {
+          const cached = localStorage.getItem(this.cacheKey);
+          return cached ? JSON.parse(cached) : null;
+        } catch {
+          return null;
+        }
+      }
+
+      setCache(isValid) {
+        const cache = {
+          isValid,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(this.cacheKey, JSON.stringify(cache));
+      }
+
+      clearCache() {
+        localStorage.removeItem(this.cacheKey);
+      }
+    }
+
+    const authCache = new AuthCache();
+
+    // Função de verificação com cache
+    async function verificarAutenticacao() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.log('Token não encontrado, redirecionando para login');
+        authCache.clearCache();
+        window.location.href = "/";
+        return false;
+      }
+
+      // Verifica se temos um cache válido
+      if (authCache.isValid()) {
+        const cache = authCache.getCache();
+        if (cache && cache.isValid) {
+          console.log('Usando cache de autenticação válido');
+          return true;
+        }
+      }
+
+      try {
+        console.log('Verificando autenticação no servidor...');
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+        const res = await fetch(`${API_URL}/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          console.log('Autenticação verificada com sucesso');
+          authCache.setCache(true);
+          return true;
+        } else if (res.status === 401 || res.status === 403) {
+          console.log('Token inválido, removendo e redirecionando');
+          localStorage.removeItem("token");
+          authCache.clearCache();
+          window.location.href = "/";
+          return false;
+        } else {
+          // Erro do servidor, mas mantém o cache anterior se existir
+          console.log(`Erro do servidor: ${res.status}`);
+          const cache = authCache.getCache();
+          if (cache && cache.isValid && (Date.now() - cache.timestamp) < 30 * 60 * 1000) { // 30 min
+            console.log('Usando cache anterior devido a erro do servidor');
+            return true;
+          }
+          throw new Error(`Server error: ${res.status}`);
+        }
+      } catch (error) {
+        console.error('Erro na verificação de autenticação:', error);
+
+        // Em caso de erro de rede, verifica se temos cache recente
+        const cache = authCache.getCache();
+        if (cache && cache.isValid && (Date.now() - cache.timestamp) < 30 * 60 * 1000) {
+          console.log('Usando cache devido a erro de rede');
+          return true;
+        }
+
+        // Se não há cache válido e é claramente um erro de rede, não desloga
+        if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.name === 'AbortError') {
+          console.log('Erro de rede detectado, mantendo usuário logado');
+          return true;
+        }
+
+        // Para outros erros, desloga
+        localStorage.removeItem("token");
+        authCache.clearCache();
+        window.location.href = "/";
+        return false;
+      }
+    }
+    // Função de verificação de autenticação
+    async function verificarAutenticacao() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "/";
+        return false;
+      }
+
+      try {
+        // Usando URL dinâmica para verificar perfil
+        const res = await fetch(`${API_URL}/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) {
+          localStorage.removeItem("token");
+          window.location.href = "/";
+          return false;
+        }
+        return true;
+      } catch (error) {
+        localStorage.removeItem("token");
+        window.location.href = "/";
+        return false;
+      }
+    }
+
+    function irPara(pagina) {
+      window.location.href = pagina;
+    }
+
+    function voltarParaVisualizacao() {
+      window.location.href = '/visualizar-personagem';
+    }
+
+    // Função para converter checkbox
+    function getCheckboxValue(id) {
+      return document.getElementById(id).checked ? 1 : 0;
+    }
+
+    // Função para converter número ou retornar null
+    function getNumberValue(id) {
+      const value = document.getElementById(id).value;
+      return value === "" ? null : parseInt(value, 10);
+    }
+
+    // Função para pegar valor de texto
+    function getTextValue(id) {
+      return document.getElementById(id).value.trim() || "";
+    }
+
+    // Função para definir valor nos campos
+    function setFieldValue(id, value) {
+      const element = document.getElementById(id);
+      if (element) {
+        if (element.type === 'checkbox') {
+          element.checked = value == 1;
+        } else {
+          element.value = value || '';
+        }
+      }
+    }
+
+    // Carregar dados do personagem para edição
+    async function carregarDadosParaEdicao() {
+      const characterId = localStorage.getItem('selectedCharacterId');
+      const token = localStorage.getItem('token');
+
+      if (!characterId) {
+        alert('Nenhum personagem selecionado para edição.');
+        window.location.href = '/personagens';
+        return;
+      }
+
+      try {
+        // Usando URL dinâmica para carregar dados do personagem
+        const response = await fetch(`${API_URL}/characters/${characterId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const personagem = data.character;
+          preencherFormulario(personagem);
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Erro ao carregar dados');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar personagem:', error);
+        alert('Erro ao carregar dados do personagem: ' + error.message);
+        window.location.href = '/personagens';
+      }
+    }
+
+    // Preencher formulário com os dados existentes
+    function preencherFormulario(personagem) {
+      // Informações básicas
+      setFieldValue('nome-personagem', personagem.nome);
+      setFieldValue('classe-nivel', personagem.classe_nivel);
+      setFieldValue('antecedente', personagem.antecedente);
+      setFieldValue('nome-jogador', personagem.nome_jogador);
+      setFieldValue('raca', personagem.raca);
+      setFieldValue('alinhamento', personagem.alinhamento);
+      setFieldValue('pontos_experiencia', personagem.pontos_experiencia);
+
+      // Combate
+      setFieldValue('classe-armadura', personagem.classe_armadura);
+      setFieldValue('iniciativa', personagem.iniciativa);
+      setFieldValue('deslocamento', personagem.deslocamento);
+
+      // Vida
+      setFieldValue('pontos_vida_max', personagem.pontos_vida_max);
+      setFieldValue('pontos_vida_atual', personagem.pontos_vida_atual);
+      setFieldValue('pontos_vida_temp', personagem.pontos_vida_temp);
+      setFieldValue('dado-vida', personagem.dado_vida);
+
+      // Checkboxes de testes de morte
+      setFieldValue('sucesso1', personagem.sucesso1);
+      setFieldValue('sucesso2', personagem.sucesso2);
+      setFieldValue('sucesso3', personagem.sucesso3);
+      setFieldValue('falha1', personagem.falha1);
+      setFieldValue('falha2', personagem.falha2);
+      setFieldValue('falha3', personagem.falha3);
+
+      // Personalidade
+      setFieldValue('traços_personalidade', personagem.traços_personalidade);
+      setFieldValue('ideais', personagem.ideais);
+      setFieldValue('vínculos', personagem.vínculos);
+      setFieldValue('fraquezas', personagem.fraquezas);
+
+      // Físico
+      setFieldValue('idade', personagem.idade);
+      setFieldValue('altura', personagem.altura);
+      setFieldValue('peso', personagem.peso);
+      setFieldValue('cor_olhos', personagem.cor_olhos);
+      setFieldValue('cor_pele', personagem.cor_pele);
+      setFieldValue('cor_cabelo', personagem.cor_cabelo);
+      setFieldValue('caracteristicas-adicionais', personagem.caracteristicas_adicionais);
+
+      // Mostrar formulário e esconder loading
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('formulario-edicao').style.display = 'block';
+    }
+
+    // Validar formulário
+    function validarFormulario() {
+      const nome = getTextValue("nome-personagem");
+      if (!nome) {
+        alert("Por favor, digite o nome do personagem.");
+        document.getElementById("nome-personagem").focus();
+        return false;
+      }
+      return true;
+    }
+
+    // Event listener do botão salvar
+    document.getElementById("btn-salvar").addEventListener("click", async function (event) {
+      event.preventDefault();
+
+      if (!validarFormulario()) return;
+
+      const token = localStorage.getItem("token");
+      const characterId = localStorage.getItem('selectedCharacterId');
+
+      if (!token) {
+        alert("Você precisa estar logado para editar um personagem.");
+        window.location.href = "/login";
+        return;
+      }
+
+      if (!characterId) {
+        alert("Nenhum personagem selecionado para editar.");
+        return;
+      }
+
+      // Montar objeto do personagem
+      const personagem = {
+        nome: getTextValue("nome-personagem"),
+        classe_nivel: getTextValue("classe-nivel"),
+        antecedente: getTextValue("antecedente"),
+        nome_jogador: getTextValue("nome-jogador"),
+        raca: getTextValue("raca"),
+        alinhamento: getTextValue("alinhamento"),
+        pontos_experiencia: getNumberValue("pontos_experiencia"),
+        classe_armadura: getNumberValue("classe-armadura"),
+        iniciativa: getNumberValue("iniciativa"),
+        deslocamento: getNumberValue("deslocamento"),
+        pontos_vida_max: getNumberValue("pontos_vida_max"),
+        pontos_vida_atual: getNumberValue("pontos_vida_atual"),
+        pontos_vida_temp: getNumberValue("pontos_vida_temp"),
+        dado_vida: getTextValue("dado-vida"),
+
+        // Checkboxes
+        sucesso1: getCheckboxValue("sucesso1"),
+        sucesso2: getCheckboxValue("sucesso2"),
+        sucesso3: getCheckboxValue("sucesso3"),
+        falha1: getCheckboxValue("falha1"),
+        falha2: getCheckboxValue("falha2"),
+        falha3: getCheckboxValue("falha3"),
+
+        // Personalidade
+        traços_personalidade: getTextValue("traços_personalidade"),
+        ideais: getTextValue("ideais"),
+        vínculos: getTextValue("vínculos"),
+        fraquezas: getTextValue("fraquezas"),
+
+        // Físico
+        idade: getNumberValue("idade"),
+        altura: getTextValue("altura"),
+        peso: getTextValue("peso"),
+        cor_olhos: getTextValue("cor_olhos"),
+        cor_pele: getTextValue("cor_pele"),
+        cor_cabelo: getTextValue("cor_cabelo"),
+        caracteristicas_adicionais: getTextValue("caracteristicas-adicionais"),
+      };
+
+      // Desabilitar botão durante o envio
+      const btnSalvar = document.getElementById("btn-salvar");
+      btnSalvar.disabled = true;
+      btnSalvar.innerHTML = '<i data-lucide="loader-2" class="spinner"></i> Salvando...';
+
+      try {
+        // Usando URL dinâmica para atualizar personagem
+        const response = await fetch(`${API_URL}/characters/${characterId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify(personagem),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          alert(`🎉 Personagem "${personagem.nome}" atualizado com sucesso!`);
+          window.location.href = "/visualizar-personagem";
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Erro desconhecido ao atualizar personagem");
+        }
+      } catch (error) {
+        console.error("Erro ao atualizar personagem:", error);
+        alert("Erro ao atualizar personagem: " + error.message);
+      } finally {
+        // Reabilitar botão
+        btnSalvar.disabled = false;
+        btnSalvar.innerHTML = '<i data-lucide="save"></i> Salvar Alterações';
+        lucide.createIcons();
+      }
+    });
+
+    // Inicializar página
+    document.addEventListener('DOMContentLoaded', async () => {
+      const autenticado = await verificarAutenticacao();
+      if (autenticado) {
+        await carregarDadosParaEdicao();
+      }
+      lucide.createIcons();
+    });
+  </script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 30px;
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 20px 30px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .header-icon {
+      width: 32px;
+      height: 32px;
+      color: #667eea;
+    }
+
+    .header h1 {
+      color: #333;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #666 0%, #555 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-back:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 102, 102, 0.3);
+    }
+
+    .btn-back i {
+      width: 16px;
+      height: 16px;
+    }
+
+    .spacer {
+      width: 120px;
+    }
+
+    /* Loading State */
+    .loading-state {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 60px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .loading-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      color: #667eea;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-content p {
+      color: #666;
+      font-size: 16px;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Main Content */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    /* Character Name Section */
+    .character-name-section {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 30px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .input-group.featured input {
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+      border: 3px solid #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Form Sections */
+    .form-section {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 25px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-section h2 {
+      color: #333;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .form-section h2 i {
+      width: 24px;
+      height: 24px;
+      color: #667eea;
+    }
+
+    /* Form Grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    /* Input Groups */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .input-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #555;
+      font-size: 14px;
+    }
+
+    .input-group label i {
+      width: 16px;
+      height: 16px;
+      color: #667eea;
+    }
+
+    .input-group input,
+    .input-group textarea {
+      padding: 12px 16px;
+      border: 2px solid #e1e5e9;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+    }
+
+    .input-group input:focus,
+    .input-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .input-group textarea {
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+    }
+
+    /* Death Saves */
+    .death-saves {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 30px;
+      align-items: start;
+    }
+
+    .save-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .save-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #555;
+      font-size: 14px;
+    }
+
+    .saves-checkboxes {
+      display: flex;
+      gap: 30px;
+    }
+
+    .save-type {
+      flex: 1;
+    }
+
+    .save-type h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 15px;
+    }
+
+    .save-type h3 i {
+      width: 18px;
+      height: 18px;
+    }
+
+    .checkboxes {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      color: #555;
+      transition: all 0.3s ease;
+    }
+
+    .checkbox-label:hover {
+      color: #333;
+    }
+
+    .checkbox-label input {
+      display: none;
+    }
+
+    .checkmark {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #ddd;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .checkmark.success {
+      border-color: #4CAF50;
+    }
+
+    .checkmark.failure {
+      border-color: #f44336;
+    }
+
+    .checkbox-label input:checked+.checkmark.success {
+      background: #4CAF50;
+      border-color: #4CAF50;
+    }
+
+    .checkbox-label input:checked+.checkmark.failure {
+      background: #f44336;
+      border-color: #f44336;
+    }
+
+    .checkbox-label input:checked+.checkmark::after {
+      content: '✓';
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    /* Action Section */
+    .action-section {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 30px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      display: flex;
+      gap: 15px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 15px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .btn i {
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(76, 175, 80, 0.4);
+    }
+
+    .btn-success:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(244, 67, 54, 0.4);
+    }
+
+    /* Spinner */
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+
+    /* Navbar */
+    .navbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      border-top: 1px solid #e1e5e9;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar button {
+      flex: 1;
+      padding: 8px 0;
+      background: none;
+      border: none;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.3s ease;
+    }
+
+    .navbar button i {
+      width: 20px;
+      height: 20px;
+      margin-bottom: 4px;
+    }
+
+    .navbar button.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding-top: 15px;
+      padding-bottom: 15px;
+      font-weight: bold;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .navbar button:hover:not(.active) {
+      color: #667eea;
+      transform: translateY(-2px);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+
+      .header-nav {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+
+      .spacer {
+        display: none;
+      }
+
+      .header h1 {
+        font-size: 24px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .death-saves {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .saves-checkboxes {
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .action-section {
+        flex-direction: column;
+      }
+
+      .input-group.featured input {
+        font-size: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-content {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .header-icon {
+        width: 28px;
+        height: 28px;
+      }
+
+      .btn-back {
+        align-self: flex-start;
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .form-section {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .character-name-section {
+      animation: fadeInUp 0.4s ease-out;
+    }
+
+    .action-section {
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .loading-state {
+      animation: fadeInUp 0.4s ease-out;
+    }
+  </style>
+</body>
+
+</html>

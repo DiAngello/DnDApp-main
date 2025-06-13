@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Magias</title>
+    <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <!-- Header com nome do personagem -->
+    <div class="header">
+        <button onclick="voltarParaVisualizacao()" class="btn-voltar">
+            <i data-lucide="arrow-left"></i>
+            Voltar
+        </button>
+        <h1 id="titulo-personagem">Magias do Personagem</h1>
+        <div class="spacer"></div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading" style="display: block;">
+        <div class="loading-content">
+            <i data-lucide="loader-2" class="loading-spinner"></i>
+            <p>Carregando magias do personagem...</p>
+        </div>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div id="conteudo-magias" class="container" style="display: none;">
+        <!-- Informações básicas de conjuração -->
+        <div class="card">
+            <h2 class="card-title">
+                <i data-lucide="wand-2"></i>
+                Informações de Conjuração
+            </h2>
+            <div class="campo-full">
+                <label for="classe-conjuradora">Classe Conjuradora:</label>
+                <input type="text" id="classe-conjuradora" placeholder="Ex: Mago, Clérigo, Druida..." />
+            </div>
+
+            <div class="linha3campos">
+                <div class="campo">
+                    <label for="cd-resistencia">CD para Resistência</label>
+                    <input type="text" id="cd-resistencia" placeholder="Ex: 15" />
+                </div>
+                <div class="campo">
+                    <label for="bonus-ataque-magia">Bônus de Ataque</label>
+                    <input type="text" id="bonus-ataque-magia" placeholder="Ex: +7" />
+                </div>
+                <div class="campo">
+                    <label for="habilidade-chave">Habilidade Chave</label>
+                    <input type="text" id="habilidade-chave" placeholder="Ex: Inteligência" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Truques (Nível 0) -->
+        <div class="card">
+            <div class="bloco-magia">
+                <div class="nivel-header">
+                    <span class="nivel-numero">0</span>
+                    <strong class="nivel-titulo">Truques</strong>
+                </div>
+                <div id="truques-container" class="truques">
+                    <!-- Truques serão inseridos aqui -->
+                </div>
+                <button type="button" onclick="adicionarTruque()" class="btn-adicionar-magia">
+                    <i data-lucide="plus"></i>
+                    Adicionar Truque
+                </button>
+            </div>
+        </div>
+
+        <!-- Magias por Nível (1-9) -->
+        <div id="niveis-magias">
+            <!-- Níveis de magia serão gerados dinamicamente -->
+        </div>
+
+        <div class="botoes-acao">
+            <button class="btn-salvar" id="btn-salvar-magias">
+                <i data-lucide="save"></i>
+                Salvar Magias
+            </button>
+            <button onclick="continuarParaInventario()" class="btn-continuar" style="display: none;">
+                <i data-lucide="arrow-right"></i>
+                Continuar para Inventário
+            </button>
+        </div>
+    </div>
+
+    <div class="navbar">
+        <button data-aba="personagem" onclick="irPara('/personagens')">
+            <i data-lucide="user"></i>
+            <span>Personagem</span>
+        </button>
+        <button data-aba="atributos" onclick="irPara('/atributos')">
+            <i data-lucide="list"></i>
+            <span>Atributos</span>
+        </button>
+        <button data-aba="habilidades" onclick="irPara('/habilidades')">
+            <i data-lucide="star"></i>
+            <span>Habilidades</span>
+        </button>
+        <button class="active" data-aba="magias" onclick="irPara('/magias')">
+            <i data-lucide="zap"></i>
+            <span>Magias</span>
+        </button>
+        <button data-aba="inventario" onclick="irPara('/inventario')">
+            <i data-lucide="briefcase"></i>
+            <span>Inventário</span>
+        </button>
+        <button data-aba="jogador" onclick="irPara('/jogador')">
+            <i data-lucide="user-circle"></i>
+            <span>Jogador</span>
+        </button>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+
+        class AuthCache {
+            constructor() {
+                this.cacheKey = 'auth_verification_cache';
+                this.cacheTimeout = 5 * 60 * 1000; // 5 minutos
+            }
+
+            isValid() {
+                const cache = this.getCache();
+                if (!cache) return false;
+
+                const now = Date.now();
+                return (now - cache.timestamp) < this.cacheTimeout;
+            }
+
+            getCache() {
+                try {
+                    const cached = localStorage.getItem(this.cacheKey);
+                    return cached ? JSON.parse(cached) : null;
+                } catch {
+                    return null;
+                }
+            }
+
+            setCache(isValid) {
+                const cache = {
+                    isValid,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(this.cacheKey, JSON.stringify(cache));
+            }
+
+            clearCache() {
+                localStorage.removeItem(this.cacheKey);
+            }
+        }
+
+        const authCache = new AuthCache();
+
+        // Função de verificação com cache
+        async function verificarAutenticacao() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.log('Token não encontrado, redirecionando para login');
+                authCache.clearCache();
+                window.location.href = "/";
+                return false;
+            }
+
+            // Verifica se temos um cache válido
+            if (authCache.isValid()) {
+                const cache = authCache.getCache();
+                if (cache && cache.isValid) {
+                    console.log('Usando cache de autenticação válido');
+                    return true;
+                }
+            }
+
+            try {
+                console.log('Verificando autenticação no servidor...');
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                const res = await fetch(`${API_URL}/profile`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (res.ok) {
+                    console.log('Autenticação verificada com sucesso');
+                    authCache.setCache(true);
+                    return true;
+                } else if (res.status === 401 || res.status === 403) {
+                    console.log('Token inválido, removendo e redirecionando');
+                    localStorage.removeItem("token");
+                    authCache.clearCache();
+                    window.location.href = "/";
+                    return false;
+                } else {
+                    // Erro do servidor, mas mantém o cache anterior se existir
+                    console.log(`Erro do servidor: ${res.status}`);
+                    const cache = authCache.getCache();
+                    if (cache && cache.isValid && (Date.now() - cache.timestamp) < 30 * 60 * 1000) { // 30 min
+                        console.log('Usando cache anterior devido a erro do servidor');
+                        return true;
+                    }
+                    throw new Error(`Server error: ${res.status}`);
+                }
+            } catch (error) {
+                console.error('Erro na verificação de autenticação:', error);
+
+                // Em caso de erro de rede, verifica se temos cache recente
+                const cache = authCache.getCache();
+                if (cache && cache.isValid && (Date.now() - cache.timestamp) < 30 * 60 * 1000) {
+                    console.log('Usando cache devido a erro de rede');
+                    return true;
+                }
+
+                // Se não há cache válido e é claramente um erro de rede, não desloga
+                if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.name === 'AbortError') {
+                    console.log('Erro de rede detectado, mantendo usuário logado');
+                    return true;
+                }
+
+                // Para outros erros, desloga
+                localStorage.removeItem("token");
+                authCache.clearCache();
+                window.location.href = "/";
+                return false;
+            }
+        }
+
+        // Verificação de autenticação
+        async function verificarAutenticacao() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.log('Token não encontrado, redirecionando para login');
+                window.location.href = "/";
+                return false;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/profile`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                if (!res.ok) {
+                    console.log('Token inválido, removendo e redirecionando');
+                    localStorage.removeItem("token");
+                    window.location.href = "/";
+                    return false;
+                }
+
+                console.log('Autenticação verificada com sucesso');
+                return true;
+            } catch (error) {
+                console.error('Erro na verificação de autenticação:', error);
+                localStorage.removeItem("token");
+                window.location.href = "/";
+                return false;
+            }
+        }
+
+        function irPara(pagina) {
+            window.location.href = pagina;
+        }
+
+        function voltarParaVisualizacao() {
+            window.location.href = '/visualizar-personagem';
+        }
+
+        function continuarParaInventario() {
+            window.location.href = '/inventario';
+        }
+
+        // Gerar blocos de magia para os níveis 1-9
+        function gerarBlocosMagia() {
+            const container = document.getElementById('niveis-magias');
+
+            for (let nivel = 1; nivel <= 9; nivel++) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="bloco-magia">
+                        <div class="nivel-header">
+                            <span class="nivel-numero">${nivel}</span>
+                            <strong class="nivel-titulo">Nível ${nivel}</strong>
+                            <div class="espacos-magia">
+                                <input type="number" id="nivel-${nivel}-total" placeholder="Total" min="0" />
+                                <span class="separador">/</span>
+                                <input type="number" id="nivel-${nivel}-usados" placeholder="Usados" min="0" />
+                            </div>
+                        </div>
+                        <div id="nivel-${nivel}-magias" class="magias-nivel">
+                            <!-- Magias do nível serão inseridas aqui -->
+                        </div>
+                        <button type="button" onclick="adicionarMagia(${nivel})" class="btn-adicionar-magia">
+                            <i data-lucide="plus"></i>
+                            Adicionar Magia Nível ${nivel}
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        }
+
+        // Adicionar truque
+        function adicionarTruque() {
+            const container = document.getElementById('truques-container');
+            const linha = document.createElement('div');
+            linha.className = 'linha-magia';
+            linha.innerHTML = `
+                <input type="checkbox" class="checkbox-preparada" />
+                <input type="text" class="input-nome-magia" placeholder="Nome do truque" />
+                <button type="button" onclick="removerMagia(this)" class="btn-remover-magia" title="Remover">
+                    <i data-lucide="x"></i>
+                </button>
+            `;
+            container.appendChild(linha);
+            lucide.createIcons();
+        }
+
+        // Adicionar magia de nível específico
+        function adicionarMagia(nivel) {
+            const container = document.getElementById(`nivel-${nivel}-magias`);
+            const linha = document.createElement('div');
+            linha.className = 'linha-magia';
+            linha.innerHTML = `
+                <input type="checkbox" class="checkbox-preparada" />
+                <input type="text" class="input-nome-magia" placeholder="Nome da magia" />
+                <button type="button" onclick="removerMagia(this)" class="btn-remover-magia" title="Remover">
+                    <i data-lucide="x"></i>
+                </button>
+            `;
+            container.appendChild(linha);
+            lucide.createIcons();
+        }
+
+        // Remover magia/truque
+        function removerMagia(botao) {
+            const linha = botao.closest('.linha-magia');
+            linha.remove();
+        }
+
+        // Coletar dados dos truques
+        function coletarTruques() {
+            const linhas = document.querySelectorAll('#truques-container .linha-magia');
+            const truques = [];
+
+            linhas.forEach(linha => {
+                const nome = linha.querySelector('.input-nome-magia').value.trim();
+                const preparada = linha.querySelector('.checkbox-preparada').checked;
+
+                if (nome) {
+                    truques.push({
+                        nome: nome,
+                        preparada: preparada
+                    });
+                }
+            });
+
+            console.log('Truques coletados:', truques);
+            return truques;
+        }
+
+        // Coletar dados das magias de um nível específico
+        function coletarMagiasNivel(nivel) {
+            const linhas = document.querySelectorAll(`#nivel-${nivel}-magias .linha-magia`);
+            const magias = [];
+
+            linhas.forEach(linha => {
+                const nome = linha.querySelector('.input-nome-magia').value.trim();
+                const preparada = linha.querySelector('.checkbox-preparada').checked;
+
+                if (nome) {
+                    magias.push({
+                        nome: nome,
+                        preparada: preparada
+                    });
+                }
+            });
+
+            console.log(`Magias nível ${nivel} coletadas:`, magias);
+            return magias;
+        }
+
+        // Carregar magias existentes
+        async function carregarMagias() {
+            const characterId = localStorage.getItem('selectedCharacterId');
+            const token = localStorage.getItem('token');
+
+            console.log('=== CARREGANDO MAGIAS ===');
+            console.log('Character ID:', characterId);
+            console.log('Token presente:', !!token);
+
+            if (!characterId) {
+                console.log('Nenhum personagem selecionado');
+                alert('Nenhum personagem selecionado. Redirecionando...');
+                window.location.href = '/personagens';
+                return;
+            }
+
+            if (!token) {
+                console.log('Token não encontrado');
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/';
+                return;
+            }
+
+            try {
+                console.log('Buscando dados básicos do personagem...');
+                // Primeiro, carregar dados básicos do personagem
+                const characterResponse = await fetch(`${API_URL}/characters/${characterId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Status da resposta do personagem:', characterResponse.status);
+
+                if (characterResponse.ok) {
+                    const characterData = await characterResponse.json();
+                    console.log('Dados do personagem recebidos:', characterData);
+                    const personagem = characterData.character;
+
+                    if (personagem && personagem.nome) {
+                        document.getElementById('titulo-personagem').textContent = `Magias - ${personagem.nome}`;
+                        console.log('Título atualizado para:', personagem.nome);
+                    }
+                } else {
+                    const errorText = await characterResponse.text();
+                    console.error('Erro ao buscar personagem:', characterResponse.status, errorText);
+                }
+
+                // Gerar blocos de magia
+                console.log('Gerando blocos de magia...');
+                gerarBlocosMagia();
+
+                console.log('Buscando magias existentes...');
+                // Tentar carregar magias existentes
+                const spellsResponse = await fetch(`${API_URL}/characters/${characterId}/spells`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Status da resposta das magias:', spellsResponse.status);
+
+                if (spellsResponse.ok) {
+                    const spellsData = await spellsResponse.json();
+                    console.log('Dados das magias recebidos:', spellsData);
+                    const magias = spellsData.spells;
+                    preencherMagias(magias);
+                } else {
+                    const errorText = await spellsResponse.text();
+                    console.log('Nenhuma magia encontrada ou erro:', spellsResponse.status, errorText);
+                    console.log('Usando valores padrão - adicionando truques vazios');
+                    // Adicionar alguns truques vazios
+                    for (let i = 0; i < 3; i++) {
+                        adicionarTruque();
+                    }
+                }
+
+                // Mostrar conteúdo e esconder loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('conteudo-magias').style.display = 'block';
+                console.log('Interface atualizada - loading removido, conteúdo exibido');
+
+            } catch (error) {
+                console.error('Erro detalhado ao carregar magias:', error);
+                console.error('Stack trace:', error.stack);
+
+                // Mostrar conteúdo mesmo com erro
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('conteudo-magias').style.display = 'block';
+
+                // Gerar blocos e adicionar truques vazios em caso de erro
+                gerarBlocosMagia();
+                for (let i = 0; i < 3; i++) {
+                    adicionarTruque();
+                }
+
+                alert('Erro ao carregar magias: ' + error.message);
+            }
+        }
+
+        // Preencher formulário com magias existentes
+        function preencherMagias(magias) {
+            if (!magias) {
+                console.log('Nenhuma magia para preencher, usando valores padrão');
+                for (let i = 0; i < 3; i++) {
+                    adicionarTruque();
+                }
+                return;
+            }
+
+            console.log('Preenchendo magias:', magias);
+
+            try {
+                // Informações básicas
+                document.getElementById('classe-conjuradora').value = magias.classe_conjuradora || '';
+                document.getElementById('cd-resistencia').value = magias.cd_resistencia || '';
+                document.getElementById('bonus-ataque-magia').value = magias.bonus_ataque_magia || '';
+                document.getElementById('habilidade-chave').value = magias.habilidade_chave || '';
+
+                // Preencher truques
+                const trequesContainer = document.getElementById('truques-container');
+                trequesContainer.innerHTML = '';
+
+                let truquesParsed = [];
+
+                // Tentar fazer parse dos truques se for string JSON
+                if (typeof magias.truques === 'string') {
+                    try {
+                        truquesParsed = JSON.parse(magias.truques);
+                    } catch (e) {
+                        console.log('Erro ao fazer parse dos truques JSON:', e);
+                        truquesParsed = [];
+                    }
+                } else if (Array.isArray(magias.truques)) {
+                    truquesParsed = magias.truques;
+                }
+
+                console.log('Truques processados:', truquesParsed);
+
+                if (truquesParsed && truquesParsed.length > 0) {
+                    truquesParsed.forEach(truque => {
+                        const linha = document.createElement('div');
+                        linha.className = 'linha-magia';
+                        linha.innerHTML = `
+                            <input type="checkbox" class="checkbox-preparada" ${truque.preparada ? 'checked' : ''} />
+                            <input type="text" class="input-nome-magia" placeholder="Nome do truque" value="${truque.nome || ''}" />
+                            <button type="button" onclick="removerMagia(this)" class="btn-remover-magia" title="Remover">
+                                <i data-lucide="x"></i>
+                            </button>
+                        `;
+                        trequesContainer.appendChild(linha);
+                    });
+                } else {
+                    // Adicionar truques vazios se não houver
+                    console.log('Nenhum truque encontrado, adicionando truques vazios');
+                    for (let i = 0; i < 3; i++) {
+                        adicionarTruque();
+                    }
+                }
+
+                // Preencher magias por nível
+                for (let nivel = 1; nivel <= 9; nivel++) {
+                    // Espaços de magia
+                    const totalInput = document.getElementById(`nivel-${nivel}-total`);
+                    const usadosInput = document.getElementById(`nivel-${nivel}-usados`);
+
+                    if (totalInput) totalInput.value = magias[`nivel_${nivel}_espacos_total`] || '';
+                    if (usadosInput) usadosInput.value = magias[`nivel_${nivel}_espacos_usados`] || '';
+
+                    // Magias do nível
+                    const container = document.getElementById(`nivel-${nivel}-magias`);
+                    if (container) {
+                        container.innerHTML = '';
+
+                        let magiasNivel = [];
+                        const magiasData = magias[`nivel_${nivel}_magias`];
+
+                        // Tentar fazer parse das magias se for string JSON
+                        if (typeof magiasData === 'string') {
+                            try {
+                                magiasNivel = JSON.parse(magiasData);
+                            } catch (e) {
+                                console.log(`Erro ao fazer parse das magias nível ${nivel}:`, e);
+                                magiasNivel = [];
+                            }
+                        } else if (Array.isArray(magiasData)) {
+                            magiasNivel = magiasData;
+                        }
+
+                        console.log(`Magias nível ${nivel} processadas:`, magiasNivel);
+
+                        if (magiasNivel && magiasNivel.length > 0) {
+                            magiasNivel.forEach(magia => {
+                                const linha = document.createElement('div');
+                                linha.className = 'linha-magia';
+                                linha.innerHTML = `
+                                    <input type="checkbox" class="checkbox-preparada" ${magia.preparada ? 'checked' : ''} />
+                                    <input type="text" class="input-nome-magia" placeholder="Nome da magia" value="${magia.nome || ''}" />
+                                    <button type="button" onclick="removerMagia(this)" class="btn-remover-magia" title="Remover">
+                                        <i data-lucide="x"></i>
+                                    </button>
+                                `;
+                                container.appendChild(linha);
+                            });
+                        }
+                    }
+                }
+
+                lucide.createIcons();
+                console.log('Magias preenchidas com sucesso');
+            } catch (error) {
+                console.error('Erro ao preencher magias:', error);
+                // Adicionar truques vazios em caso de erro
+                for (let i = 0; i < 3; i++) {
+                    adicionarTruque();
+                }
+            }
+        }
+
+        // Salvar magias
+        async function salvarMagias() {
+            const characterId = localStorage.getItem('selectedCharacterId');
+            const token = localStorage.getItem('token');
+
+            console.log('=== SALVANDO MAGIAS ===');
+            console.log('Character ID:', characterId);
+            console.log('Token presente:', !!token);
+
+            if (!characterId) {
+                alert('Nenhum personagem selecionado');
+                return;
+            }
+
+            if (!token) {
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/';
+                return;
+            }
+
+            const magias = {
+                classe_conjuradora: document.getElementById('classe-conjuradora').value.trim(),
+                cd_resistencia: document.getElementById('cd-resistencia').value.trim(),
+                bonus_ataque_magia: document.getElementById('bonus-ataque-magia').value.trim(),
+                habilidade_chave: document.getElementById('habilidade-chave').value.trim(),
+                truques: coletarTruques()
+            };
+
+            // Coletar magias por nível
+            for (let nivel = 1; nivel <= 9; nivel++) {
+                const totalElement = document.getElementById(`nivel-${nivel}-total`);
+                const usadosElement = document.getElementById(`nivel-${nivel}-usados`);
+
+                magias[`nivel_${nivel}_espacos_total`] = totalElement ? parseInt(totalElement.value) || 0 : 0;
+                magias[`nivel_${nivel}_espacos_usados`] = usadosElement ? parseInt(usadosElement.value) || 0 : 0;
+                magias[`nivel_${nivel}_magias`] = coletarMagiasNivel(nivel);
+            }
+
+            console.log('Dados a serem enviados:', magias);
+
+            const btnSalvar = document.getElementById('btn-salvar-magias');
+            btnSalvar.disabled = true;
+            btnSalvar.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Salvando...';
+
+            try {
+                console.log('Enviando requisição para salvar magias...');
+                const response = await fetch(`${API_URL}/characters/${characterId}/spells`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(magias)
+                });
+
+                console.log('Status da resposta:', response.status);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Resposta de sucesso:', data);
+                    alert('Magias salvas com sucesso!');
+
+                    // Sempre mostrar botão continuar após salvar
+                    document.querySelector('.btn-continuar').style.display = 'inline-flex';
+                } else {
+                    const errorData = await response.text();
+                    console.error('Erro na resposta:', response.status, errorData);
+
+                    let errorMessage = 'Erro desconhecido';
+                    try {
+                        const errorJson = JSON.parse(errorData);
+                        errorMessage = errorJson.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = `Erro HTTP ${response.status}: ${errorData}`;
+                    }
+
+                    alert('Erro ao salvar magias: ' + errorMessage);
+                }
+            } catch (error) {
+                console.error('Erro de rede:', error);
+                alert('Erro de conexão ao salvar magias: ' + error.message);
+            } finally {
+                btnSalvar.disabled = false;
+                btnSalvar.innerHTML = '<i data-lucide="save"></i> Salvar Magias';
+                lucide.createIcons();
+            }
+        }
+
+        // Event listener do botão salvar
+        document.getElementById('btn-salvar-magias').addEventListener('click', salvarMagias);
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('=== INICIALIZANDO PÁGINA DE MAGIAS ===');
+            console.log('URL atual:', window.location.href);
+            console.log('API URL:', API_URL);
+
+            const autenticado = await verificarAutenticacao();
+            if (autenticado) {
+                await carregarMagias();
+            }
+            lucide.createIcons();
+        });
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            flex: 1;
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .btn-voltar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-voltar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .spacer {
+            width: 80px;
+        }
+
+        /* Loading */
+        .loading {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 60px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+        }
+
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-content p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 20px;
+            font-weight: 600;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .card-title i {
+            width: 24px;
+            height: 24px;
+            color: #667eea;
+        }
+
+        /* Form Elements */
+        .campo-full {
+            margin-bottom: 20px;
+        }
+
+        .campo-full label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .campo-full input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .linha3campos {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .campo {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .campo label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .campo input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Blocos de Magia */
+        .bloco-magia {
+            border-top: 3px solid #667eea;
+            padding-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .nivel-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nivel-numero {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .nivel-titulo {
+            color: #333;
+            font-size: 18px;
+            flex: 1;
+        }
+
+        .espacos-magia {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(102, 126, 234, 0.05);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .espacos-magia input {
+            width: 60px;
+            padding: 8px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .separador {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        /* Linha de Magia */
+        .linha-magia {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: rgba(102, 126, 234, 0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(102, 126, 234, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .linha-magia:hover {
+            background: rgba(102, 126, 234, 0.06);
+            border-color: rgba(102, 126, 234, 0.15);
+        }
+
+        .linha-magia input[type="text"] {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .linha-magia input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            accent-color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .btn-remover-magia {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-remover-magia:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .btn-remover-magia i {
+            width: 16px;
+            height: 16px;
+        }
+
+        .btn-adicionar-magia {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-adicionar-magia:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Buttons */
+        .botoes-acao {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn-salvar,
+        .btn-continuar {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            justify-content: center;
+            min-width: 200px;
+        }
+
+        .btn-salvar {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .btn-salvar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-salvar:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-continuar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-continuar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            border-top: 1px solid #e1e5e9;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar button {
+            flex: 1;
+            padding: 8px 0;
+            background: none;
+            border: none;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .navbar button i {
+            width: 20px;
+            height: 20px;
+            margin-bottom: 4px;
+        }
+
+        .navbar button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            font-weight: bold;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .navbar button:hover:not(.active) {
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 20px;
+            }
+
+            .spacer {
+                display: none;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .linha3campos {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .campo {
+                min-width: unset;
+            }
+
+            .nivel-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .espacos-magia {
+                justify-content: center;
+            }
+
+            .linha-magia {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .botoes-acao {
+                flex-direction: column;
+            }
+
+            .btn-salvar,
+            .btn-continuar {
+                min-width: unset;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-title {
+                font-size: 18px;
+            }
+
+            .nivel-numero {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .btn-remover-magia {
+                width: 28px;
+                height: 28px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .header {
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .linha-magia {
+            animation: fadeInUp 0.5s ease-out;
+        }
+    </style>
+</body>
+
+</html>

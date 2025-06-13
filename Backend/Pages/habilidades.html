@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Habilidades do Personagem</title>
+    <link rel="icon" type="image/x-icon" href="./assets/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <!-- Header com nome do personagem -->
+    <div class="header">
+        <button onclick="voltarParaVisualizacao()" class="btn-voltar">
+            <i data-lucide="arrow-left"></i>
+            Voltar
+        </button>
+        <h1 id="titulo-personagem">Habilidades do Personagem</h1>
+        <div class="spacer"></div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading" style="display: block;">
+        <div class="loading-content">
+            <i data-lucide="loader-2" class="loading-spinner"></i>
+            <p>Carregando habilidades do personagem...</p>
+        </div>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div id="conteudo-habilidades" class="container" style="display: none;">
+        <!-- Ataques & Conjuração -->
+        <div class="card">
+            <h2 class="card-title">
+                <i data-lucide="sword"></i>
+                Ataques & Conjuração
+            </h2>
+            <div id="lista-ataques">
+                <!-- Ataques serão inseridos aqui dinamicamente -->
+            </div>
+            <button class="btn-adicionar" onclick="adicionarLinhaAtaque()">
+                <i data-lucide="plus"></i>
+                Adicionar Ataque
+            </button>
+        </div>
+
+        <!-- Características & Talentos -->
+        <div class="card">
+            <h2 class="card-title">
+                <i data-lucide="star"></i>
+                Características & Talentos
+            </h2>
+            <textarea class="textarea-grande" id="caracteristicas-talentos"
+                placeholder="Ex: Sentidos aguçados, Visão no escuro, Fúria, Ação Extra, etc..."></textarea>
+        </div>
+
+        <!-- Outras Proficiências & Idiomas -->
+        <div class="card">
+            <h2 class="card-title">
+                <i data-lucide="book-open"></i>
+                Outras Proficiências & Idiomas
+            </h2>
+            <textarea class="textarea-grande" id="outras-proficiencias"
+                placeholder="Ex: Idiomas (Élfico, Anão), Ferramentas (Kit de Ladrão), Armaduras (Leve, Média), etc..."></textarea>
+        </div>
+
+        <div class="botoes-acao">
+            <button class="btn-salvar" id="btn-salvar-habilidades">
+                <i data-lucide="save"></i>
+                Salvar Habilidades
+            </button>
+            <button onclick="continuarParaMagias()" class="btn-continuar" style="display: none;">
+                <i data-lucide="arrow-right"></i>
+                Continuar para Magias
+            </button>
+        </div>
+    </div>
+
+    <div class="navbar">
+        <button data-aba="personagem" onclick="irPara('/personagens')">
+            <i data-lucide="user"></i>
+            <span>Personagem</span>
+        </button>
+        <button data-aba="atributos" onclick="irPara('/atributos')">
+            <i data-lucide="list"></i>
+            <span>Atributos</span>
+        </button>
+        <button class="active" data-aba="habilidades" onclick="irPara('/habilidades')">
+            <i data-lucide="star"></i>
+            <span>Habilidades</span>
+        </button>
+        <button data-aba="magias" onclick="irPara('/magias')">
+            <i data-lucide="zap"></i>
+            <span>Magias</span>
+        </button>
+        <button data-aba="inventario" onclick="irPara('/inventario')">
+            <i data-lucide="briefcase"></i>
+            <span>Inventário</span>
+        </button>
+        <button data-aba="jogador" onclick="irPara('/jogador')">
+            <i data-lucide="user-circle"></i>
+            <span>Jogador</span>
+        </button>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+
+        class AuthCache {
+            constructor() {
+                this.cacheKey = 'auth_verification_cache';
+                this.cacheTimeout = 5 * 60 * 1000; // 5 minutos
+            }
+
+            isValid() {
+                const cache = this.getCache();
+                if (!cache) return false;
+
+                const now = Date.now();
+                return (now - cache.timestamp) < this.cacheTimeout;
+            }
+
+            getCache() {
+                try {
+                    const cached = localStorage.getItem(this.cacheKey);
+                    return cached ? JSON.parse(cached) : null;
+                } catch {
+                    return null;
+                }
+            }
+
+            setCache(isValid) {
+                const cache = {
+                    isValid,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(this.cacheKey, JSON.stringify(cache));
+            }
+
+            clearCache() {
+                localStorage.removeItem(this.cacheKey);
+            }
+        }
+
+        const authCache = new AuthCache();
+
+        // Função de verificação com cache
+        async function verificarAutenticacao() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.log('Token não encontrado, redirecionando para login');
+                authCache.clearCache();
+                window.location.href = "/";
+                return false;
+            }
+
+            // Verifica se temos um cache válido
+            if (authCache.isValid()) {
+                const cache = authCache.getCache();
+                if (cache && cache.isValid) {
+                    console.log('Usando cache de autenticação válido');
+                    return true;
+                }
+            }
+
+            try {
+                console.log('Verificando autenticação no servidor...');
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                const res = await fetch(`${API_URL}/profile`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (res.ok) {
+                    console.log('Autenticação verificada com sucesso');
+                    authCache.setCache(true);
+                    return true;
+                } else if (res.status === 401 || res.status === 403) {
+                    console.log('Token inválido, removendo e redirecionando');
+                    localStorage.removeItem("token");
+                    authCache.clearCache();
+                    window.location.href = "/";
+                    return false;
+                } else {
+                    // Erro do servidor, mas mantém o cache anterior se existir
+                    console.log(`Erro do servidor: ${res.status}`);
+                    const cache = authCache.getCache();
+                    if (cache && cache.isValid && (Date.now() - cache.timestamp) < 30 * 60 * 1000) { // 30 min
+                        console.log('Usando cache anterior devido a erro do servidor');
+                        return true;
+                    }
+                    throw new Error(`Server error: ${res.status}`);
+                }
+            } catch (error) {
+                console.error('Erro na verificação de autenticação:', error);
+
+                // Em caso de erro de rede, verifica se temos cache recente
+                const cache = authCache.getCache();
+                if (cache && cache.isValid && (Date.now() - cache.timestamp) < 30 * 60 * 1000) {
+                    console.log('Usando cache devido a erro de rede');
+                    return true;
+                }
+
+                // Se não há cache válido e é claramente um erro de rede, não desloga
+                if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.name === 'AbortError') {
+                    console.log('Erro de rede detectado, mantendo usuário logado');
+                    return true;
+                }
+
+                // Para outros erros, desloga
+                localStorage.removeItem("token");
+                authCache.clearCache();
+                window.location.href = "/";
+                return false;
+            }
+        }
+
+        let ataques = []; // Array para armazenar os ataques
+
+        // Verificação de autenticação
+        async function verificarAutenticacao() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.log('Token não encontrado, redirecionando para login');
+                window.location.href = "/";
+                return false;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/profile`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                if (!res.ok) {
+                    console.log('Token inválido, removendo e redirecionando');
+                    localStorage.removeItem("token");
+                    window.location.href = "/";
+                    return false;
+                }
+
+                console.log('Autenticação verificada com sucesso');
+                return true;
+            } catch (error) {
+                console.error('Erro na verificação de autenticação:', error);
+                localStorage.removeItem("token");
+                window.location.href = "/";
+                return false;
+            }
+        }
+
+        function irPara(pagina) {
+            window.location.href = pagina;
+        }
+
+        function voltarParaVisualizacao() {
+            window.location.href = '/visualizar-personagem';
+        }
+
+        function continuarParaMagias() {
+            window.location.href = '/magias';
+        }
+
+        // Adicionar nova linha de ataque
+        function adicionarLinhaAtaque() {
+            const lista = document.getElementById('lista-ataques');
+            const novaLinha = document.createElement('div');
+            novaLinha.className = 'linha-ataque';
+            novaLinha.innerHTML = `
+                <input type="text" placeholder="Nome do Ataque/Magia" class="input-nome" />
+                <input type="text" placeholder="Bônus de Ataque (ex: +5)" class="input-bonus" />
+                <input type="text" placeholder="Dano/Tipo (ex: 1d8+3 cortante)" class="input-dano" />
+                <button type="button" onclick="removerLinhaAtaque(this)" class="btn-remover" title="Remover">
+                    <i data-lucide="x"></i>
+                </button>
+            `;
+            lista.appendChild(novaLinha);
+
+            // Re-inicializar ícones do Lucide
+            lucide.createIcons();
+        }
+
+        // Remover linha de ataque
+        function removerLinhaAtaque(botao) {
+            const linha = botao.closest('.linha-ataque');
+            linha.remove();
+        }
+
+        // Carregar habilidades existentes (se houver)
+        async function carregarHabilidades() {
+            const characterId = localStorage.getItem('selectedCharacterId');
+            const token = localStorage.getItem('token');
+
+            console.log('=== CARREGANDO HABILIDADES ===');
+            console.log('Character ID:', characterId);
+            console.log('Token presente:', !!token);
+
+            if (!characterId) {
+                console.log('Nenhum personagem selecionado');
+                alert('Nenhum personagem selecionado. Redirecionando...');
+                window.location.href = '/personagens';
+                return;
+            }
+
+            if (!token) {
+                console.log('Token não encontrado');
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/';
+                return;
+            }
+
+            try {
+                console.log('Buscando dados básicos do personagem...');
+                // Primeiro, carregar dados básicos do personagem
+                const characterResponse = await fetch(`${API_URL}/characters/${characterId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Status da resposta do personagem:', characterResponse.status);
+
+                if (characterResponse.ok) {
+                    const characterData = await characterResponse.json();
+                    console.log('Dados do personagem recebidos:', characterData);
+                    const personagem = characterData.character;
+
+                    if (personagem && personagem.nome) {
+                        document.getElementById('titulo-personagem').textContent = `Habilidades - ${personagem.nome}`;
+                        console.log('Título atualizado para:', personagem.nome);
+                    }
+                } else {
+                    const errorText = await characterResponse.text();
+                    console.error('Erro ao buscar personagem:', characterResponse.status, errorText);
+                }
+
+                console.log('Buscando habilidades existentes...');
+                // Tentar carregar habilidades existentes
+                const abilitiesResponse = await fetch(`${API_URL}/characters/${characterId}/abilities`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Status da resposta das habilidades:', abilitiesResponse.status);
+
+                if (abilitiesResponse.ok) {
+                    const abilitiesData = await abilitiesResponse.json();
+                    console.log('Dados das habilidades recebidos:', abilitiesData);
+                    const habilidades = abilitiesData.abilities;
+                    preencherHabilidades(habilidades);
+                } else {
+                    const errorText = await abilitiesResponse.text();
+                    console.log('Nenhuma habilidade encontrada ou erro:', abilitiesResponse.status, errorText);
+                    console.log('Usando valores padrão - adicionando linha vazia');
+                    // Adicionar pelo menos uma linha de ataque vazia
+                    adicionarLinhaAtaque();
+                }
+
+                // Mostrar conteúdo e esconder loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('conteudo-habilidades').style.display = 'block';
+                console.log('Interface atualizada - loading removido, conteúdo exibido');
+
+            } catch (error) {
+                console.error('Erro detalhado ao carregar habilidades:', error);
+                console.error('Stack trace:', error.stack);
+
+                // Mostrar conteúdo mesmo com erro
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('conteudo-habilidades').style.display = 'block';
+
+                // Adicionar linha vazia em caso de erro
+                adicionarLinhaAtaque();
+
+                alert('Erro ao carregar habilidades: ' + error.message);
+            }
+        }
+
+        // Preencher formulário com habilidades existentes
+        function preencherHabilidades(habilidades) {
+            if (!habilidades) {
+                console.log('Nenhuma habilidade para preencher, usando valores padrão');
+                adicionarLinhaAtaque();
+                return;
+            }
+
+            console.log('Preenchendo habilidades:', habilidades);
+
+            try {
+                // Preencher textareas
+                document.getElementById('caracteristicas-talentos').value = habilidades.caracteristicas_talentos || '';
+                document.getElementById('outras-proficiencias').value = habilidades.outras_proficiencias_idiomas || '';
+
+                // Preencher ataques
+                const listaAtaques = document.getElementById('lista-ataques');
+                listaAtaques.innerHTML = ''; // Limpar ataques existentes
+
+                let ataquesParsed = [];
+
+                // Tentar fazer parse dos ataques se for string JSON
+                if (typeof habilidades.ataques_conjuracao === 'string') {
+                    try {
+                        ataquesParsed = JSON.parse(habilidades.ataques_conjuracao);
+                    } catch (e) {
+                        console.log('Erro ao fazer parse dos ataques JSON:', e);
+                        ataquesParsed = [];
+                    }
+                } else if (Array.isArray(habilidades.ataques_conjuracao)) {
+                    ataquesParsed = habilidades.ataques_conjuracao;
+                }
+
+                console.log('Ataques processados:', ataquesParsed);
+
+                if (ataquesParsed && ataquesParsed.length > 0) {
+                    ataquesParsed.forEach(ataque => {
+                        const novaLinha = document.createElement('div');
+                        novaLinha.className = 'linha-ataque';
+                        novaLinha.innerHTML = `
+                            <input type="text" placeholder="Nome do Ataque/Magia" class="input-nome" value="${ataque.nome || ''}" />
+                            <input type="text" placeholder="Bônus de Ataque (ex: +5)" class="input-bonus" value="${ataque.bonus_ataque || ''}" />
+                            <input type="text" placeholder="Dano/Tipo (ex: 1d8+3 cortante)" class="input-dano" value="${ataque.dano_tipo || ''}" />
+                            <button type="button" onclick="removerLinhaAtaque(this)" class="btn-remover" title="Remover">
+                                <i data-lucide="x"></i>
+                            </button>
+                        `;
+                        listaAtaques.appendChild(novaLinha);
+                    });
+                } else {
+                    // Se não há ataques, adicionar uma linha vazia
+                    console.log('Nenhum ataque encontrado, adicionando linha vazia');
+                    adicionarLinhaAtaque();
+                }
+
+                // Re-inicializar ícones do Lucide
+                lucide.createIcons();
+                console.log('Habilidades preenchidas com sucesso');
+            } catch (error) {
+                console.error('Erro ao preencher habilidades:', error);
+                // Adicionar linha vazia em caso de erro
+                adicionarLinhaAtaque();
+            }
+        }
+
+        // Coletar dados dos ataques
+        function coletarAtaques() {
+            const linhasAtaque = document.querySelectorAll('.linha-ataque');
+            const ataques = [];
+
+            linhasAtaque.forEach(linha => {
+                const nome = linha.querySelector('.input-nome').value.trim();
+                const bonusAtaque = linha.querySelector('.input-bonus').value.trim();
+                const danoTipo = linha.querySelector('.input-dano').value.trim();
+
+                // Só adiciona se pelo menos o nome foi preenchido
+                if (nome) {
+                    ataques.push({
+                        nome: nome,
+                        bonus_ataque: bonusAtaque,
+                        dano_tipo: danoTipo
+                    });
+                }
+            });
+
+            console.log('Ataques coletados:', ataques);
+            return ataques;
+        }
+
+        // Salvar habilidades
+        async function salvarHabilidades() {
+            const characterId = localStorage.getItem('selectedCharacterId');
+            const token = localStorage.getItem('token');
+
+            console.log('=== SALVANDO HABILIDADES ===');
+            console.log('Character ID:', characterId);
+            console.log('Token presente:', !!token);
+
+            if (!characterId) {
+                alert('Nenhum personagem selecionado');
+                return;
+            }
+
+            if (!token) {
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/';
+                return;
+            }
+
+            const habilidades = {
+                ataques_conjuracao: coletarAtaques(),
+                caracteristicas_talentos: document.getElementById('caracteristicas-talentos').value.trim(),
+                outras_proficiencias_idiomas: document.getElementById('outras-proficiencias').value.trim()
+            };
+
+            console.log('Dados a serem enviados:', habilidades);
+
+            const btnSalvar = document.getElementById('btn-salvar-habilidades');
+            btnSalvar.disabled = true;
+            btnSalvar.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Salvando...';
+
+            try {
+                console.log('Enviando requisição para salvar habilidades...');
+                const response = await fetch(`${API_URL}/characters/${characterId}/abilities`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(habilidades)
+                });
+
+                console.log('Status da resposta:', response.status);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Resposta de sucesso:', data);
+                    alert('Habilidades salvas com sucesso!');
+
+                    // Sempre mostrar botão continuar após salvar
+                    document.querySelector('.btn-continuar').style.display = 'inline-flex';
+                } else {
+                    const errorData = await response.text();
+                    console.error('Erro na resposta:', response.status, errorData);
+
+                    let errorMessage = 'Erro desconhecido';
+                    try {
+                        const errorJson = JSON.parse(errorData);
+                        errorMessage = errorJson.error || errorMessage;
+                    } catch (e) {
+                        errorMessage = `Erro HTTP ${response.status}: ${errorData}`;
+                    }
+
+                    alert('Erro ao salvar habilidades: ' + errorMessage);
+                }
+            } catch (error) {
+                console.error('Erro de rede:', error);
+                alert('Erro de conexão ao salvar habilidades: ' + error.message);
+            } finally {
+                btnSalvar.disabled = false;
+                btnSalvar.innerHTML = '<i data-lucide="save"></i> Salvar Habilidades';
+                lucide.createIcons();
+            }
+        }
+
+        // Event listener do botão salvar
+        document.getElementById('btn-salvar-habilidades').addEventListener('click', salvarHabilidades);
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('=== INICIALIZANDO PÁGINA DE HABILIDADES ===');
+            console.log('URL atual:', window.location.href);
+            console.log('API URL:', API_URL);
+
+            const autenticado = await verificarAutenticacao();
+            if (autenticado) {
+                await carregarHabilidades();
+            }
+            lucide.createIcons();
+        });
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            flex: 1;
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .btn-voltar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-voltar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .spacer {
+            width: 80px;
+        }
+
+        /* Loading */
+        .loading {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 60px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+        }
+
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-content p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 20px;
+            font-weight: 600;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .card-title i {
+            width: 24px;
+            height: 24px;
+            color: #667eea;
+        }
+
+        /* Linha de Ataque */
+        .linha-ataque {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            align-items: center;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .linha-ataque:hover {
+            background: rgba(102, 126, 234, 0.08);
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+
+        .linha-ataque input {
+            padding: 12px 16px;
+            font-size: 14px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            flex: 1;
+            background: white;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .linha-ataque input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-remover {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-remover:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .btn-remover i {
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn-adicionar {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .btn-adicionar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        /* Textarea */
+        .textarea-grande {
+            width: 100%;
+            min-height: 120px;
+            padding: 16px;
+            font-size: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            resize: vertical;
+            background: white;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+
+        .textarea-grande:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .textarea-grande::placeholder {
+            color: #999;
+        }
+
+        /* Buttons */
+        .botoes-acao {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn-salvar,
+        .btn-continuar {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            justify-content: center;
+            min-width: 200px;
+        }
+
+        .btn-salvar {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .btn-salvar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-salvar:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-continuar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-continuar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            border-top: 1px solid #e1e5e9;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar button {
+            flex: 1;
+            padding: 8px 0;
+            background: none;
+            border: none;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .navbar button i {
+            width: 20px;
+            height: 20px;
+            margin-bottom: 4px;
+        }
+
+        .navbar button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            font-weight: bold;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .navbar button:hover:not(.active) {
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 20px;
+            }
+
+            .spacer {
+                display: none;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .linha-ataque {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .linha-ataque input {
+                min-width: unset;
+            }
+
+            .botoes-acao {
+                flex-direction: column;
+            }
+
+            .btn-salvar,
+            .btn-continuar {
+                min-width: unset;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-title {
+                font-size: 18px;
+            }
+
+            .btn-remover {
+                width: 36px;
+                height: 36px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .header {
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .linha-ataque {
+            animation: fadeInUp 0.5s ease-out;
+        }
+    </style>
+</body>
+
+</html>
