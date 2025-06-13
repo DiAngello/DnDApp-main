@@ -1,0 +1,12 @@
+PASS  tests/authMiddleware.test.js
+  Auth Middleware
+    √ deve retornar 401 se nenhum token for fornecido (6 ms)
+    √ deve retornar 403 para token inválido (3 ms)
+    √ deve chamar next() e adicionar usuário ao request quando token for válido (2 ms)
+    √ deve extrair corretamente o token do header Authorization (1 ms)
+    √ deve lidar com erro inesperado na verificação do token (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        0.629 s, estimated 1 s                                                                                                                

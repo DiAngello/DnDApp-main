@@ -1,6 +1,6 @@
 describe('Criação de Personagem', () => {
   beforeEach(() => {
-    window.localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQiLCJ1c2VybmFtZSI6IlRlc3RlIiwiaWF0IjoxNzQ5Nzg0OTA2LCJleHAiOjE3NDk4NzEzMDZ9.X5TESMzbAXHKJNQePUc2Dr_gKjFdDB8AsrlAiMJ1SzM');
+    window.localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEwIiwidXNlcm5hbWUiOiJKb8OjbyIsImlhdCI6MTc0OTgzMzg0MSwiZXhwIjoxNzQ5OTIwMjQxfQ.gPp6yuOJ-zegO_JK_XkgK14xZ5U60Uj67e41Csk_cR8');
     cy.visit('/novo-personagem.html');
   });
 
@@ -11,7 +11,7 @@ describe('Criação de Personagem', () => {
       'nome-personagem': 'Aragorn',
       'classe-nivel': 'Guerreiro 5',
       'antecedente': 'Nobre',
-      'nome-jogador': 'Teste',
+      'nome-jogador': 'João',
       'raca': 'Humano',
       'alinhamento': 'Leal Bom',
       'pontos_experiencia': '1500',
@@ -32,7 +32,7 @@ describe('Criação de Personagem', () => {
       'cor_olhos': 'Cinza',
       'cor_pele': 'Pálida',
       'cor_cabelo': 'Castanho',
-      'caracteristicas-adicionais': 'Cicatrizwa pelo rosto',
+      'caracteristicas-adicionais': 'Cicatrizes pelo rosto',
     };
 
     Object.entries(personagem).forEach(([id, valor]) => {

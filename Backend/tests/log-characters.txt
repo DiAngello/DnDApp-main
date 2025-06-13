@@ -1,0 +1,64 @@
+ FAIL  tests/characters.test.js
+  GET /characters
+    √ deve retornar a lista de personagens do usuário autenticado (44 ms)
+    × não deve retornar personagens que não pertencem ao usuário autenticado (15 ms)
+
+  ● GET /characters › não deve retornar personagens que não pertencem ao usuário autenticado
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "FROM characters", [456]
+    Received
+           1
+              "
+          SELECT
+            id,
+            nome,
+            classe_nivel,
+            raca,
+            pontos_vida_atual,
+            pontos_vida_max,
+            created_at
+          FROM characters
+          WHERE user_id = $1
+          ORDER BY created_at DESC
+        ",
+              Array [
+            -   456,
+            +   123,
+              ],
+           2
+              "
+          SELECT
+            id,
+            nome,
+            classe_nivel,
+            raca,
+            pontos_vida_atual,
+            pontos_vida_max,
+            created_at
+          FROM characters
+          WHERE user_id = $1
+          ORDER BY created_at DESC
+        ",
+              Array [
+            -   456,
+            +   123,
+              ],
+
+    Number of calls: 2
+
+      46 |     expect(res.statusCode).toBe(200);
+      47 |     expect(res.body.characters).toEqual(mockRows);
+    > 48 |     expect(pool.query).toHaveBeenCalledWith(expect.stringContaining("FROM characters"), [456]);
+         |                        ^
+      49 |   });
+      50 |
+      51 | });
+
+      at Object.toHaveBeenCalledWith (tests/characters.test.js:48:24)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 passed, 2 total
+Snapshots:   0 total
+Time:        0.966 s, estimated 1 s
