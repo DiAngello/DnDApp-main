@@ -1,1 +1,8 @@
-# DnDApp
+# SISTEMA DE GERENCIAMENTO DE FICHAS DE D&D
+<p>Trabalho final da disciplina de Teste de Software - 2025/1</p>
+<p>Alunos: </p>
+<p>ANA LUÍSA DA PENHA MATOS</p>
+<p>ANDRESSA GABRIELLY ARAÚJO DE SOUZA</p>
+<p>DANIEL PEREIRA DA SILVA</p>
+<p>PEDRO HENRIQUE SOARES GOMES DE ARAUJO</p>
+
